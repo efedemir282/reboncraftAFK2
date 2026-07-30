@@ -13,12 +13,14 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Express] Web sunucusu ${PORT} portunda başarıyla başlatıldı.`);
 });
 
-// --- 2. GLOBAL ÇÖKME KORUMALARI ---
+// --- 2. GLOBAL ÇÖKME VE PARTİKÜL HATASI KORUMALARI ---
 process.on('uncaughtException', (err) => {
+  if (err.name === 'PartialReadError' || err.message?.includes('PartialReadError')) return;
   console.log('[Sistem Uyarısı] Hata:', err.message);
 });
 
 process.on('unhandledRejection', (reason) => {
+  if (reason && (reason.name === 'PartialReadError' || reason.message?.includes('PartialReadError'))) return;
   console.log('[Sistem Uyarısı] Rejection:', reason);
 });
 
@@ -38,7 +40,7 @@ function botuBaslat() {
       host: 'play.reborncraft.pw',
       port: 25565,
       username: 'xBetray_Farm',
-      version: '1.21.6',
+      version: '1.21.6', // Orijinal ve tam sürüm
       viewDistance: 'tiny',
       checkTimeoutInterval: 120 * 1000,
       physicsEnabled: true
@@ -109,7 +111,6 @@ function botuBaslat() {
     const mesaj = jsonMsg.toString().trim();
     if (mesaj) console.log(`[SUNUCU]: ${mesaj}`);
 
-    // Sunucu özel mesaj formatı tespiti (Örn: [Mesaj] Oyuncu -> Sana: mesaj)
     if (mesaj.includes('Sana:') || mesaj.includes('-> Sana')) {
       const parts = mesaj.split(/Sana:/i);
       if (parts.length > 1) {
@@ -120,7 +121,6 @@ function botuBaslat() {
       }
     }
 
-    // Lobi / Düşme Tespiti
     if (
       mesaj.includes('Lobiye') ||
       mesaj.includes('aktarıldınız') ||
@@ -135,6 +135,13 @@ function botuBaslat() {
   let spawnOldu = false;
 
   bot.on('spawn', () => {
+    // Protokol seviyesinde gelen paket okuma hatalarını yakala ve yut
+    if (bot._client) {
+      bot._client.on('error', (err) => {
+        if (err.name === 'PartialReadError' || err.message?.includes('PartialReadError')) return;
+      });
+    }
+
     if (spawnOldu) return;
     spawnOldu = true;
 
@@ -187,7 +194,7 @@ function botuBaslat() {
   });
 
   bot.on('error', (err) => {
-    if (err.name === 'PartialReadError' || err.message?.includes('timed out')) return;
+    if (err.name === 'PartialReadError' || err.message?.includes('PartialReadError') || err.message?.includes('timed out')) return;
     console.log('Hata oluştu:', err.message);
     sifirlaVeYenidenBaslat();
   });
