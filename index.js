@@ -1,3 +1,17 @@
+// --- 0. KONSOL KİRLİLİĞİNİ (PARTİKÜL HATALARINI) SESSİZE ALMA ---
+const originalConsoleError = console.error;
+console.error = function (...args) {
+  const msg = args.map(arg => (arg && arg.stack ? arg.stack : String(arg))).join(' ');
+  if (
+    msg.includes('PartialReadError') || 
+    msg.includes('packet_world_particles') || 
+    msg.includes('protodef')
+  ) {
+    return; // Görsel paket hatalarını konsola basma, yut.
+  }
+  originalConsoleError.apply(console, args);
+};
+
 const mineflayer = require('mineflayer');
 const express = require('express');
 
@@ -13,7 +27,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Express] Web sunucusu ${PORT} portunda başarıyla başlatıldı.`);
 });
 
-// --- 2. GLOBAL ÇÖKME VE PARTİKÜL HATASI KORUMALARI ---
+// --- 2. GLOBAL ÇÖKME KORUMALARI ---
 process.on('uncaughtException', (err) => {
   if (err.name === 'PartialReadError' || err.message?.includes('PartialReadError')) return;
   console.log('[Sistem Uyarısı] Hata:', err.message);
@@ -40,7 +54,7 @@ function botuBaslat() {
       host: 'play.reborncraft.pw',
       port: 25565,
       username: 'xBetray_Farm',
-      version: '1.21.6', // Orijinal ve tam sürüm
+      version: '1.21.6',
       viewDistance: 'tiny',
       checkTimeoutInterval: 120 * 1000,
       physicsEnabled: true
@@ -111,6 +125,7 @@ function botuBaslat() {
     const mesaj = jsonMsg.toString().trim();
     if (mesaj) console.log(`[SUNUCU]: ${mesaj}`);
 
+    // Özel Mesaj Yakalama
     if (mesaj.includes('Sana:') || mesaj.includes('-> Sana')) {
       const parts = mesaj.split(/Sana:/i);
       if (parts.length > 1) {
@@ -121,11 +136,10 @@ function botuBaslat() {
       }
     }
 
+    // Gerçek Lobiye Düşme Kontrolü
     if (
-      mesaj.includes('Lobiye') ||
-      mesaj.includes('aktarıldınız') ||
-      mesaj.includes('yeniden başlatılıyor') ||
-      mesaj.includes('Lütfen giriş komutunu kullanın')
+      mesaj.includes('Lobiye aktarıldınız') ||
+      mesaj.includes('Sunucu yeniden başlatılıyor')
     ) {
       console.log('>> Lobiye düştü! Tekrar Nether evine dönülüyor...');
       netherHomeDon();
@@ -135,28 +149,21 @@ function botuBaslat() {
   let spawnOldu = false;
 
   bot.on('spawn', () => {
-    // Protokol seviyesinde gelen paket okuma hatalarını yakala ve yut
-    if (bot._client) {
-      bot._client.on('error', (err) => {
-        if (err.name === 'PartialReadError' || err.message?.includes('PartialReadError')) return;
-      });
-    }
-
     if (spawnOldu) return;
     spawnOldu = true;
 
     console.log('>> xBetray_Farm oyuna bağlandı.');
 
-    // 1. Giriş Yap ve Nether Evine Işınlan
+    // 1. Otomatik Giriş Yap ve Home Çek
     setTimeout(() => {
       komutGonder('/login Efe_438021');
       console.log('>> [1/2] /login gönderildi.');
-    }, 4000);
+    }, 3000);
 
     setTimeout(() => {
       komutGonder('/home');
       console.log('>> [2/2] Nether evine (/home) çekildi.');
-    }, 10000);
+    }, 9000);
 
     // 2. AFK Zıplama & Kol Sallama (Her 25 saniyede bir)
     if (afkInterval) clearInterval(afkInterval);
