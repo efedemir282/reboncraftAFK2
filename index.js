@@ -1,4 +1,18 @@
-// --- 0. KONSOL KİRLİLİĞİNİ (PARTİKÜL HATALARINI) SESSİZE ALMA ---
+// --- 0. KONSOL KİRLİLİĞİNİ (STDERR & PARTİKÜL HATALARINI) KESİN SESSİZE ALMA ---
+const originalStderrWrite = process.stderr.write;
+process.stderr.write = function (buffer, encoding, cb) {
+  const msg = buffer.toString();
+  if (
+    msg.includes('PartialReadError') ||
+    msg.includes('packet_world_particles') ||
+    msg.includes('protodef') ||
+    msg.includes('ExtendableError')
+  ) {
+    return true; // Hata çıktısını yut, konsola yazma
+  }
+  return originalStderrWrite.apply(this, arguments);
+};
+
 const originalConsoleError = console.error;
 console.error = function (...args) {
   const msg = args.map(arg => (arg && arg.stack ? arg.stack : String(arg))).join(' ');
@@ -7,7 +21,7 @@ console.error = function (...args) {
     msg.includes('packet_world_particles') || 
     msg.includes('protodef')
   ) {
-    return; // Görsel paket hatalarını konsola basma, yut.
+    return;
   }
   originalConsoleError.apply(console, args);
 };
