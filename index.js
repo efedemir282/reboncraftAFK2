@@ -1,31 +1,3 @@
-// --- 0. KONSOL KİRLİLİĞİNİ (STDERR & PARTİKÜL HATALARINI) KESİN SESSİZE ALMA ---
-const originalStderrWrite = process.stderr.write;
-process.stderr.write = function (buffer, encoding, cb) {
-  const msg = buffer.toString();
-  if (
-    msg.includes('PartialReadError') ||
-    msg.includes('packet_world_particles') ||
-    msg.includes('protodef') ||
-    msg.includes('ExtendableError')
-  ) {
-    return true; // Hata çıktısını yut, konsola yazma
-  }
-  return originalStderrWrite.apply(this, arguments);
-};
-
-const originalConsoleError = console.error;
-console.error = function (...args) {
-  const msg = args.map(arg => (arg && arg.stack ? arg.stack : String(arg))).join(' ');
-  if (
-    msg.includes('PartialReadError') || 
-    msg.includes('packet_world_particles') || 
-    msg.includes('protodef')
-  ) {
-    return;
-  }
-  originalConsoleError.apply(console, args);
-};
-
 const mineflayer = require('mineflayer');
 const express = require('express');
 
@@ -71,7 +43,8 @@ function botuBaslat() {
       version: '1.21.6',
       viewDistance: 'tiny',
       checkTimeoutInterval: 120 * 1000,
-      physicsEnabled: true
+      physicsEnabled: true,
+      hideErrors: true // <--- PAKET OKUMA HATALARINI KONSOLDAN ENGELLER
     });
   } catch (err) {
     console.log('Bot başlatma hatası:', err.message);
