@@ -44,7 +44,7 @@ function botuBaslat() {
       viewDistance: 'tiny',
       checkTimeoutInterval: 120 * 1000,
       physicsEnabled: true,
-      hideErrors: true // <--- PAKET OKUMA HATALARINI KONSOLDAN ENGELLER
+      hideErrors: true // Hata logu gizleme aktif
     });
   } catch (err) {
     console.log('Bot başlatma hatası:', err.message);
@@ -77,11 +77,11 @@ function botuBaslat() {
     setTimeout(botuBaslat, 10000);
   }
 
-  // NETHER HOME DÖNÜŞ FONKSİYONU
-  function netherHomeDon() {
-    console.log('>> Nether evine (/home) ışınlanılıyor...');
-    setTimeout(() => komutGonder('/skyblock'), 2000);
-    setTimeout(() => komutGonder('/home'), 8000);
+  // SKYBLOCK & HOME YÖNLENDİRMESİ
+  function afkKonumunaGit() {
+    console.log('>> Skyblock sunucusuna ve AFK konumuna (/home) gidiliyor...');
+    komutGonder('/skyblock');
+    setTimeout(() => komutGonder('/home'), 6000);
   }
 
   // UZAKTAN /MSG İLE KONTROL FONKSİYONU
@@ -92,9 +92,9 @@ function botuBaslat() {
 
     if (icerik === 'home') {
       komutGonder('/home');
-      komutGonder(`/msg ${gonderen} Nether evine (/home) ışınlanıldı!`);
+      komutGonder(`/msg ${gonderen} AFK konumuna (/home) ışınlanıldı!`);
     } else if (icerik === 'durum' || icerik === 'ping') {
-      komutGonder(`/msg ${gonderen} Bot aktif ve Nether AFK konumunda!`);
+      komutGonder(`/msg ${gonderen} Bot aktif ve Spawner AFK konumunda!`);
     } else if (icerik.startsWith('komut ')) {
       const gonderilecekKomut = mesajIcerik.substring(6);
       komutGonder(gonderilecekKomut);
@@ -128,8 +128,8 @@ function botuBaslat() {
       mesaj.includes('Lobiye aktarıldınız') ||
       mesaj.includes('Sunucu yeniden başlatılıyor')
     ) {
-      console.log('>> Lobiye düştü! Tekrar Nether evine dönülüyor...');
-      netherHomeDon();
+      console.log('>> Lobiye düştü! Tekrar Skyblock ve /home çekiliyor...');
+      afkKonumunaGit();
     }
   });
 
@@ -141,18 +141,25 @@ function botuBaslat() {
 
     console.log('>> xBetray_Farm oyuna bağlandı.');
 
-    // 1. Otomatik Giriş Yap ve Home Çek
+    // 1. Şifre Gir
     setTimeout(() => {
       komutGonder('/login Efe_438021');
-      console.log('>> [1/2] /login gönderildi.');
+      console.log('>> [1/3] /login gönderildi.');
     }, 3000);
 
+    // 2. Skyblock Sunucusuna Geç
+    setTimeout(() => {
+      komutGonder('/skyblock');
+      console.log('>> [2/3] Skyblock sunucusuna geçiş yapılıyor...');
+    }, 8000);
+
+    // 3. Spawner / AFK Konumuna Çek (/home)
     setTimeout(() => {
       komutGonder('/home');
-      console.log('>> [2/2] Nether evine (/home) çekildi.');
-    }, 9000);
+      console.log('>> [3/3] AFK spawner alanına (/home) çekildi.');
+    }, 14000);
 
-    // 2. AFK Zıplama & Kol Sallama (Her 25 saniyede bir)
+    // 4. AFK Zıplama & Kol Sallama (Her 25 saniyede bir)
     if (afkInterval) clearInterval(afkInterval);
     afkInterval = setInterval(() => {
       if (bot && bot.entity) {
@@ -167,7 +174,7 @@ function botuBaslat() {
       }
     }, 25000);
 
-    // 3. Periyodik Nether /home Emniyeti (Her 15 dakikada bir)
+    // 5. Periyodik Kontrol (Her 15 dakikada bir /home tazeleme)
     if (kontrolInterval) clearInterval(kontrolInterval);
     kontrolInterval = setInterval(() => {
       if (bot && bot.entity) {
